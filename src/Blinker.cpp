@@ -14,3 +14,7 @@ void Blinker::update() {
         led.toggle();
     }
 }
+
+void Blinker::reset() {
+    lastToggleMs = millis();
+}
