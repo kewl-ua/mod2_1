@@ -1,28 +1,24 @@
 #include <Arduino.h>
 #include "LED.h"
 
-LED::LED(int p, int durMs, int delMs) :
-    pin(p),
-    state(OFF),
-    durationMs(durMs),
-    delayMs(delMs) { }
+Led::Led(uint8_t p) : pin(p), state(LedState::Off) { }
 
-void LED::init() {
+void Led::init() {
     pinMode(pin, OUTPUT);
+    set(LedState::Off);
 }
 
-void LED::on() {
-    state = ON;
-    digitalWrite(pin, state);
+void Led::set(LedState newState) {
+    state = newState;
+
+    // enum class не конвертируется в int неявно — только явным кастом
+    digitalWrite(pin, static_cast<uint8_t>(state));
 }
 
-void LED::off() {
-    state = OFF;
-    digitalWrite(pin, state);
+void Led::toggle() {
+    set(state == LedState::On ? LedState::Off : LedState::On);
 }
 
-void LED::toggle() {
-    state = (state == ON) ? OFF : ON;
-
-    digitalWrite(pin, state);
+LedState Led::get() const {
+    return state;
 }

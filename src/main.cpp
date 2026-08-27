@@ -1,41 +1,108 @@
 #include <Arduino.h>
+#include "config.h"
 #include "LED.h"
+#include "Blinker.h"
+#include "Log.h"
 
-// Constants
-constexpr int LED_PIN = 19;
-constexpr int BLINK_DURATION = 1000;
-constexpr int BLINK_DELAY = 1000;
+// Режимы работы LED, переключаются по кругу нажатием кнопки
+enum class LedMode : uint8_t {
+    Blinking,
+    AlwaysOn,
+    AlwaysOff
+};
 
-LED led(LED_PIN, BLINK_DURATION, BLINK_DELAY);
+// State
+Led led(Config::LED_PIN);
+Blinker blinker(led, Config::BLINK_INTERVAL_MS);
 
-volatile bool ledRequested = false;
+static LedMode mode = LedMode::Blinking;
+volatile bool buttonPressed = false;
 
-hw_timer_t* timer = NULL;
-
-void myDelay(uint32_t duration);
-
-void IRAM_ATTR onTimer() {
-    ledRequested = true;
-
-    timerWrite(timer, 0);
+void IRAM_ATTR onButtonPressed() {
+    buttonPressed = true;
 }
+
+// API
+static void handleButton();
+static void applyNextMode();
+static void loopTimeReport();
 
 // Main
 void setup() {
+    LOG_INIT(Config::SERIAL_BAUD);
+
     led.init();
 
-    timer = timerBegin(0, 80, true);
-
-    timerAttachInterrupt(timer, &onTimer, true);
-    timerAlarmWrite(timer, BLINK_DELAY * 1000, true);
-    timerAlarmEnable(timer);
+    pinMode(Config::BUTTON_PIN, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(Config::BUTTON_PIN), onButtonPressed, FALLING);
 }
 
 void loop() {
-    if (ledRequested) {
-        led.toggle();
-        ledRequested = false;
+    handleButton();
 
-        Serial.println("LED toggled");
+    if (mode == LedMode::Blinking) {
+        blinker.update();
+    }
+
+    loopTimeReport();
+}
+
+// Implementations
+static void handleButton() {
+    if (!buttonPressed) {
+        return;
+    }
+
+    buttonPressed = false;
+
+    static uint32_t lastPressMs = 0;
+
+    uint32_t now = millis();
+    if (now - lastPressMs < Config::DEBOUNCE_MS) {   // дребезг: эхо того же нажатия
+        return;
+    }
+    lastPressMs = now;                               // запоминаем только принятое
+
+    LOGF("button pressed, lastPressMs: %lu\n", static_cast<unsigned long>(lastPressMs));
+
+    applyNextMode();
+}
+
+static void applyNextMode() {
+    switch (mode) {
+        case LedMode::Blinking:
+            mode = LedMode::AlwaysOn;
+            led.set(LedState::On);
+            LOG("mode: always on");
+            break;
+
+        case LedMode::AlwaysOn:
+            mode = LedMode::AlwaysOff;
+            led.set(LedState::Off);
+            LOG("mode: always off");
+            break;
+
+        case LedMode::AlwaysOff:
+            mode = LedMode::Blinking;
+            LOG("mode: blinking");
+            break;
+    }
+}
+
+static void loopTimeReport() {
+    static uint32_t iterations = 0;
+    static uint32_t windowStartUs = micros();
+
+    ++iterations;
+
+    if (iterations >= Config::LOOP_REPORT_EVERY) {
+        uint32_t elapsedUs = micros() - windowStartUs;
+
+        LOGF("superloop: %lu iterations, avg %.2f us/iter\n",
+             static_cast<unsigned long>(iterations),
+             static_cast<double>(elapsedUs) / iterations);
+
+        iterations = 0;
+        windowStartUs = micros();
     }
 }

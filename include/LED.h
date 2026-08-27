@@ -1,20 +1,24 @@
-enum LedState {
-    OFF = LOW,
-    ON = HIGH
+#pragma once
+
+#include <Arduino.h>
+
+enum class LedState : uint8_t {
+    Off = LOW,
+    On  = HIGH
 };
 
-class LED {
+class Led {
     private:
-        int pin;
+        uint8_t pin;
         LedState state;
-        int durationMs;
-        int delayMs;
+
     public:
-        explicit LED(int p, int durationMs, int delayMs);
+        explicit Led(uint8_t pin);
 
         void init();
 
-        void on();
-        void off();
+        void set(LedState newState);
         void toggle();
+
+        LedState get() const;
 };
