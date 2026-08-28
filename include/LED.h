@@ -1,4 +1,5 @@
-#pragma once
+#ifndef LED_H
+#define LED_H
 
 #include <Arduino.h>
 
@@ -22,3 +23,4 @@ class Led {
 
         LedState get() const;
 };
+#endif // LED_H

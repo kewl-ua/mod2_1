@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BLINKER_H
+#define BLINKER_H
 
 #include <Arduino.h>
 #include "LED.h"
@@ -15,3 +16,5 @@ class Blinker {
         void update();
         void reset();
 };
+
+#endif // BLINKER_H

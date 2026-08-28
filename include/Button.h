@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BUTTON_H
+#define BUTTON_H
 
 #include <Arduino.h>
 
@@ -6,7 +7,6 @@ class Button {
     private:
         uint8_t pin;
         uint32_t debounceMs;
-        volatile bool pressedFlag;
         uint32_t lastPressMs;
 
     public:
@@ -14,6 +14,7 @@ class Button {
 
         void init();
 
-        // true не чаще одного раза на дебаунсенное нажатие
         bool consumePress();
 };
+
+#endif // BUTTON_H
