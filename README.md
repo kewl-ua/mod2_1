@@ -8,4 +8,4 @@ ESP32 project with button-controlled LED modes: blinking, always on, always off.
 
 ## Demo
 
-![Demo](static/mod2_1.jpg) (https://drive.google.com/file/d/190rgm4RT3_djmogBnp7K-B4tzSn2rDYb/view?usp=drive_link)
+[![Demo](static/mod2_1.jpg)](https://drive.google.com/file/d/190rgm4RT3_djmogBnp7K-B4tzSn2rDYb/view?usp=drive_link)
