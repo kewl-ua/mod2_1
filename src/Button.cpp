@@ -1,32 +1,35 @@
 #include <Arduino.h>
-#include <FunctionalInterrupt.h>
 #include "Button.h"
+
+static volatile bool s_pressed = false;
+
+static void IRAM_ATTR onPress() {
+    s_pressed = true;
+}
 
 Button::Button(uint8_t p, uint32_t debounce) :
     pin(p),
     debounceMs(debounce),
-    pressedFlag(false),
     lastPressMs(0) { }
 
 void Button::init() {
-    pinMode(pin, INPUT_PULLUP);
-
-    // functional-interrupt поддержка ESP32 core: лямбда с this, без static trampoline
-    attachInterrupt(digitalPinToInterrupt(pin), [this]() { pressedFlag = true; }, FALLING);
+    pinMode(pin, INPUT);
+    attachInterrupt(digitalPinToInterrupt(pin), onPress, RISING);
 }
 
 bool Button::consumePress() {
-    if (!pressedFlag) {
+    if (!s_pressed) {
         return false;
     }
-
-    pressedFlag = false;
 
     uint32_t now = millis();
-    if (now - lastPressMs < debounceMs) {   // дребезг: эхо того же нажатия
+
+    if (now - lastPressMs < debounceMs) {
+        s_pressed = false;
         return false;
     }
-    lastPressMs = now;                      // запоминаем только принятое
 
+    s_pressed = false;
+    lastPressMs = now;
     return true;
 }

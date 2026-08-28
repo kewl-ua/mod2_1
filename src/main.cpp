@@ -5,7 +5,6 @@
 #include "Button.h"
 #include "Log.h"
 
-// Режимы работы LED, переключаются по кругу нажатием кнопки
 enum class LedMode : uint8_t {
     Blinking,
     AlwaysOn,
@@ -13,11 +12,17 @@ enum class LedMode : uint8_t {
 };
 
 // State
+static LedMode mode = LedMode::Blinking;
+
+// LED instance representing the physical LED on the board
 Led led(Config::LED_PIN);
+
+// Controls blinking logic for each LED
 Blinker blinker(led, Config::BLINK_INTERVAL_MS);
+
+// Controls button input and debouncing logic
 Button button(Config::BUTTON_PIN, Config::DEBOUNCE_MS);
 
-static LedMode mode = LedMode::Blinking;
 
 // API
 static void handleButton();
@@ -37,7 +42,10 @@ void setup() {
 void loop() {
     handleButton();
     updateMode();
-    loopTimeReport();
+
+    #if SHOULD_LOOP_REPORT
+        loopTimeReport();
+    #endif
 }
 
 // Implementations
@@ -61,7 +69,7 @@ static LedMode nextMode(LedMode current) {
     return LedMode::Blinking;   // недостижимо, но глушит warning о пути без return
 }
 
-// Entry action: всё, что должно произойти один раз при входе в режим
+// Action on entering a new mode
 static void enterMode(LedMode newMode) {
     mode = newMode;
 
@@ -83,7 +91,7 @@ static void enterMode(LedMode newMode) {
     }
 }
 
-// Периодическое обновление текущего режима
+// Periodic action for the current LED mode
 static void updateMode() {
     switch (mode) {
         case LedMode::Blinking:
@@ -96,6 +104,7 @@ static void updateMode() {
     }
 }
 
+// Reports the average loop time every Config::LOOP_REPORT_EVERY iterations
 static void loopTimeReport() {
     static uint32_t iterations = 0;
     static uint32_t windowStartUs = micros();

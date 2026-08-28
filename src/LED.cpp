@@ -11,7 +11,7 @@ void Led::init() {
 void Led::set(LedState newState) {
     state = newState;
 
-    // enum class не конвертируется в int неявно — только явным кастом
+    // for preventing enum implicit cast to int
     digitalWrite(pin, static_cast<uint8_t>(state));
 }
 
